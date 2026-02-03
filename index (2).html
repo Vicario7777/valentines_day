@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Will you be my Valentine? 💕</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh; /* mobile-safe viewport height */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Nunito', sans-serif;
+    background: #fff0f3;
+    overflow: hidden;
+    position: relative;
+    touch-action: manipulation; /* kills double-tap zoom delay */
+    overscroll-behavior: contain;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Floating Hearts Background ── */
+  .hearts-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .heart-float {
+    position: absolute;
+    bottom: -60px;
+    font-size: 1.8rem;
+    opacity: 0;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) rotate(0deg);   opacity: 0; }
+    10%  { opacity: 0.45; }
+    90%  { opacity: 0.45; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* ── Card ── */
+  .card {
+    position: relative; z-index: 1;
+    background: #fff;
+    border-radius: 28px;
+    box-shadow: 0 12px 48px rgba(200,60,80,.18);
+    padding: 56px 48px 48px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    transition: transform .3s;
+    /* keep the No button contained even after it jumps */
+    overflow: hidden;
+  }
+  .card:hover { transform: translateY(-4px); }
+
+  /* ── Bear ── */
+  .bear { font-size: 5rem; margin-bottom: 8px; display: inline-block; animation: bearBounce 2s ease-in-out infinite; }
+  @keyframes bearBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  /* ── Question ── */
+  h1 {
+    font-family: 'Playfair Display', serif;
+    color: #c9375d;
+    font-size: 2rem;
+    line-height: 1.25;
+    margin-bottom: 10px;
+  }
+  .sub { color: #a0727f; font-size: .92rem; margin-bottom: 32px; }
+
+  /* ── Buttons ── */
+  .btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 50px;
+    padding: 16px 40px;
+    min-height: 52px; /* Apple HIG minimum touch target */
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s, background .2s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Yes */
+  .btn-yes {
+    background: linear-gradient(135deg, #f06292, #ec407a);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(240,98,146,.4);
+  }
+  .btn-yes:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(240,98,146,.5); }
+  .btn-yes:active { transform: scale(1.04); }
+
+  /* No */
+  .btn-no {
+    background: #f5e6ea;
+    color: #c9375d;
+    box-shadow: 0 2px 8px rgba(201,55,93,.12);
+    position: relative;
+  }
+  .btn-no:hover { transform: scale(0.95); background: #f0dce2; }
+  .btn-no:active { transform: scale(0.92); }
+
+  /* ── Escape zone: the No button jumps around in here ── */
+  .escape-zone {
+    position: relative;
+    width: 100%;
+    height: 0;
+    margin-top: 0;
+    transition: height .25s ease, margin-top .25s ease;
+  }
+  .escape-zone.active {
+    height: 100px;
+    margin-top: 16px;
+  }
+
+  /* ── Celebration (hidden by default) ── */
+  .celebration { display: none; flex-direction: column; align-items: center; animation: fadeIn .5s ease; }
+  .celebration.show { display: flex; }
+  @keyframes fadeIn { from { opacity:0; transform: scale(.85); } to { opacity:1; transform: scale(1); } }
+
+  .celebration .bear-big { font-size: 7rem; animation: celebBounce .6s cubic-bezier(.36,.07,.19,.97) infinite alternate; }
+  @keyframes celebBounce {
+    0%   { transform: translateY(0) rotate(-3deg); }
+    100% { transform: translateY(-18px) rotate(3deg); }
+  }
+
+  .celebration h2 {
+    font-family: 'Playfair Display', serif;
+    color: #c9375d;
+    font-size: 2.2rem;
+    margin-top: 12px;
+  }
+  .celebration p { color: #a0727f; margin-top: 6px; font-size: 1rem; }
+
+  /* Confetti burst */
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    top: 50%; left: 50%;
+    pointer-events: none;
+    animation: confettiFall 1.2s cubic-bezier(.25,.46,.45,.94) forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    100% { transform: var(--end-pos) rotate(720deg); opacity: 0; }
+  }
+
+  /* ── Sparkle ring ── */
+  .sparkle-ring {
+    position: absolute;
+    width: 120px; height: 120px;
+    border: 3px solid #f06292;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sparkle-ring.pop {
+    animation: ringPop .6s ease-out forwards;
+  }
+  @keyframes ringPop {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: .7; }
+    100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 420px) {
+    .card {
+      width: 92%;
+      padding: 40px 24px 36px;
+      border-radius: 22px;
+    }
+    .bear { font-size: 3.8rem; }
+    h1 { font-size: 1.6rem; }
+    .sub { font-size: .85rem; margin-bottom: 26px; }
+    .btn { font-size: 1rem; padding: 15px 32px; }
+    .celebration .bear-big { font-size: 5.5rem; }
+    .celebration h2 { font-size: 1.8rem; }
+  }
+
+  /* ── Very small phones (e.g. iPhone SE) ── */
+  @media (max-width: 320px) {
+    .card { width: 96%; padding: 32px 18px 28px; }
+    .bear { font-size: 3rem; }
+    h1 { font-size: 1.35rem; }
+    .btn { font-size: .95rem; padding: 14px 28px; }
+    .celebration .bear-big { font-size: 4.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating hearts layer -->
+<div class="hearts-bg" id="heartsBg"></div>
+
+<!-- Main card -->
+<div class="card" id="card">
+  <!-- Sparkle ring (behind content) -->
+  <div class="sparkle-ring" id="sparkleRing"></div>
+
+  <!-- Question view -->
+  <div id="questionView">
+    <div class="bear">🧸</div>
+    <h1>Will you be my<br/>Valentine?</h1>
+    <p class="sub">Think carefully… 😏</p>
+    <div class="btns">
+      <button class="btn btn-yes" id="btnYes">Yes!</button>
+      <button class="btn btn-no"  id="btnNo" >No</button>
+    </div>
+    <!-- No button jumps into here once it starts escaping -->
+    <div class="escape-zone" id="escapeZone"></div>
+  </div>
+
+  <!-- Celebration view (hidden) -->
+  <div class="celebration" id="celebrationView">
+    <div class="bear-big">🥰</div>
+    <h2>Yay! 💕</h2>
+    <p>You made my day!</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ── Floating hearts ── */
+  const heartsBg = document.getElementById('heartsBg');
+  const emojis   = ['💕','💗','💖','💝','🌷','💐','🌸'];
+
+  function spawnHeart(){
+    const h = document.createElement('div');
+    h.className = 'heart-float';
+    h.textContent = emojis[Math.random()*emojis.length|0];
+    h.style.left = Math.random()*100 + 'vw';
+    h.style.animationDuration = (6 + Math.random()*8) + 's';
+    h.style.animationDelay = (Math.random()*2) + 's';
+    h.style.fontSize = (1.2 + Math.random()*2.2) + 'rem';
+    heartsBg.appendChild(h);
+    h.addEventListener('animationend', ()=> h.remove());
+  }
+  for(let i=0;i<12;i++) setTimeout(spawnHeart, i*600);
+  setInterval(spawnHeart, 800);
+
+  /* ── No button: jumps into escape zone on first interaction ── */
+  const btnNo        = document.getElementById('btnNo');
+  const card         = document.getElementById('card');
+  const escapeZone   = document.getElementById('escapeZone');
+  let   noEscaped    = false;
+
+  function activateEscape(){
+    if(noEscaped) return;
+    noEscaped = true;
+
+    // Open up the escape zone so the card grows smoothly
+    escapeZone.classList.add('active');
+
+    // Move the button out of the button row into the escape zone
+    btnNo.style.position = 'absolute';
+    escapeZone.appendChild(btnNo);
+
+    // Nudge it to a random spot after the zone has expanded
+    requestAnimationFrame(()=> jumpNo());
+  }
+
+  function jumpNo(){
+    const zoneW = escapeZone.offsetWidth;
+    const zoneH = escapeZone.offsetHeight;
+    const pad   = 12;
+    const maxX  = zoneW - btnNo.offsetWidth  - pad * 2;
+    const maxY  = zoneH - btnNo.offsetHeight - pad * 2;
+    btnNo.style.transition = 'left .18s ease, top .18s ease';
+    btnNo.style.left = (pad + Math.random() * Math.max(maxX, 0)) + 'px';
+    btnNo.style.top  = (pad + Math.random() * Math.max(maxY, 0)) + 'px';
+  }
+
+  btnNo.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    if(!noEscaped){ activateEscape(); } else { jumpNo(); }
+  });
+  btnNo.addEventListener('mouseenter', ()=>{
+    if(!noEscaped){ activateEscape(); } else { jumpNo(); }
+  });
+
+  /* ── Yes button: celebrate (fires once) ── */
+  const btnYes       = document.getElementById('btnYes');
+  const questionView = document.getElementById('questionView');
+  const celebView    = document.getElementById('celebrationView');
+  const sparkle      = document.getElementById('sparkleRing');
+  let   celebrated   = false;
+
+  btnYes.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    celebrate();
+  });
+
+  function celebrate(){
+    if(celebrated) return;
+    celebrated = true;
+
+    questionView.style.display = 'none';
+    celebView.classList.add('show');
+    sparkle.classList.add('pop');
+
+    // confetti burst
+    const colors = ['#f06292','#ec407a','#ff8a80','#ffcc80','#a1c4fd','#c8e6c9','#fff176'];
+    for(let i=0;i<40;i++){
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.background = colors[Math.random()*colors.length|0];
+      const angle = Math.random()*Math.PI*2;
+      const dist  = 80 + Math.random()*140;
+      piece.style.setProperty('--end-pos', `translate(${Math.cos(angle)*dist}px,${Math.sin(angle)*dist}px)`);
+      piece.style.animationDelay = Math.random()*.15 + 's';
+      piece.style.width  = (6+Math.random()*10)+'px';
+      piece.style.height = (6+Math.random()*10)+'px';
+      card.appendChild(piece);
+      piece.addEventListener('animationend', ()=> piece.remove());
+    }
+
+    for(let i=0;i<8;i++) spawnHeart();
+  }
+})();
+</script>
+</body>
+</html>
